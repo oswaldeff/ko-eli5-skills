@@ -1,0 +1,20 @@
+{
+  "name": "ko-eli5-skills",
+  "description": "Korean owner-facing report skill (ko-eli5) composed from DreambigOu/ELI5 and DaleSeo/korean-skills, plus verbatim copies of humanizer, grammar-checker, style-guide",
+  "version": "0.1.0",
+  "author": {
+    "name": "oswaldeff"
+  },
+  "homepage": "https://github.com/oswaldeff/ko-eli5-skills",
+  "repository": "https://github.com/oswaldeff/ko-eli5-skills",
+  "license": "MIT",
+  "keywords": [
+    "korean",
+    "eli5",
+    "agent-report",
+    "humanizer",
+    "grammar-checker",
+    "style-guide",
+    "multi-agent"
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "skill_name": "ko-eli5",
+  "evals": [
+    {
+      "id": 0,
+      "name": "result-done-to-korean",
+      "prompt": "Report this agent result to the owner in Korean:\n\ntype: result\ntask_id: T-0418\nstatus: done\nsummary: >\n  Added a regression test for the stream consumer and fixed the off-by-one in XACK batching that caused\n  the last message of each batch to be re-delivered. All 42 tests pass.\nclaims:\n  - text: \"Last message of every XREADGROUP batch was re-delivered once\"\n    class: measured\n    evidence: \"tests/consumer_test.py::test_no_redelivery (fails on main, passes on branch)\"\n  - text: \"Root cause is `range(len(ids) - 1)` in lib/consumer.py:88\"\n    class: measured\n    evidence: \"lib/consumer.py:88 diff\"\n  - text: \"No other call site has the same pattern\"\n    class: inferred\n    evidence: \"grep for 'range(len(' in lib/ returned 1 hit\"\nchanges:\n  - {path: \"lib/consumer.py\", kind: modified, note: \"XACK batching loop bound\"}\n  - {path: \"tests/consumer_test.py\", kind: added, note: \"regression test\"}\nverification:\n  - {cmd: \"pytest -q\", outcome: pass, excerpt: \"42 passed in 3.1s\"}\ntried_and_rejected:\n  - {approach: \"Ack each message individually\", why_rejected: \"3x more round trips; batching bug was fixable\"}\nopen_questions: []",
+      "audience": "fixed (references/audience.md)",
+      "assertions": [
+        "First line contains the status word 완료 (and not 일부 완료/실패/막힘)",
+        "Every detail bullet carries exactly one of [확인]/[추정]/[가정] and the class matches the source (measured→확인, inferred→추정, assumed→가정)",
+        "Contains none of these translation-ese or AI-closing markers: 에 대해, 통해, 있어서, 되어진다, 결론적으로, 요약하면",
+        "The English source appears verbatim (unchanged) inside a <details> block or under a heading 'English technical report (verbatim)'",
+        "No sentence begins with meta-narration such as 이제 설명하자면 / 정리하면",
+        "No 결정 필요 block is present, because open_questions is empty"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "result-partial-to-korean",
+      "prompt": "Report this agent result to the owner in Korean:\n\ntype: result\ntask_id: T-0412\nstatus: partial\nsummary: >\n  Streams path verified loss-free under test. Pub/Sub loss reproduced manually but not yet automated.\n  Production transport not confirmed.\nclaims:\n  - text: \"XREADGROUP loop drops no messages across 500 test publishes\"\n    class: measured\n    evidence: \"tests/stream_test.py::test_no_loss, 500/500\"\n  - text: \"Pub/Sub path loses messages when consumer is mid tool-call\"\n    class: inferred\n    evidence: \"3/3 manual runs lost 1-2 msgs; not automated\"\n  - text: \"Production uses Pub/Sub\"\n    class: assumed\nopen_questions: [\"Cut over to Streams now, or dual-write for a week?\"]\ndefault_if_no_answer: \"dual-write\"",
+      "audience": "fixed (references/audience.md)",
+      "assertions": [
+        "First line contains the status word 일부 완료",
+        "Every detail bullet carries exactly one of [확인]/[추정]/[가정] and the class matches the source (measured→확인, inferred→추정, assumed→가정)",
+        "Contains none of these translation-ese or AI-closing markers: 에 대해, 통해, 있어서, 되어진다, 결론적으로, 요약하면",
+        "The English source appears verbatim (unchanged) inside a <details> block or under a heading 'English technical report (verbatim)'",
+        "No sentence begins with meta-narration such as 이제 설명하자면 / 정리하면",
+        "A 결정 필요 block exists with options A/B, a one-line trade-off each, and a default action (기본 동작)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "blocker-to-korean",
+      "prompt": "Report this blocker to the owner in Korean:\n\ntype: blocker\ntask_id: T-0421\nquestion: \"Which Redis instance is production? Two hosts respond and both have an agents:msgs key.\"\nwhy_blocking: \"Cannot run PUBSUB CHANNELS / XINFO on the right host without knowing which one is live.\"\ntried:\n  - \"Checked .env files in repo: REDIS_URL points to redis-a, but docker-compose.prod.yml points to redis-b\"\n  - \"Asked worker-infra via question msg 7f3a...; no reply in 30 min\"\noptions:\n  - {label: \"A\", tradeoff: \"Treat redis-a as prod (matches .env); risk: wrong host, wasted diagnosis\"}\n  - {label: \"B\", tradeoff: \"Wait for human confirmation; risk: idle time\"}\ndefault_if_no_answer: \"halt\"",
+      "audience": "fixed (references/audience.md)",
+      "assertions": [
+        "First line contains the status word 막힘",
+        "Every detail bullet carries exactly one of [확인]/[추정]/[가정] and the class matches the source (measured→확인, inferred→추정, assumed→가정)",
+        "Contains none of these translation-ese or AI-closing markers: 에 대해, 통해, 있어서, 되어진다, 결론적으로, 요약하면",
+        "The English source appears verbatim (unchanged) inside a <details> block or under a heading 'English technical report (verbatim)'",
+        "No sentence begins with meta-narration such as 이제 설명하자면 / 정리하면",
+        "The default action 멈춤 or halt is stated in the 결정 필요 block"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "result-failed-to-korean",
+      "prompt": "Report this agent result to the owner in Korean:\n\ntype: result\ntask_id: T-0430\nstatus: failed\nsummary: Migration script aborted at step 3 of 5; database left in pre-migration state (transaction rolled back).\nclaims:\n  - {text: \"Rollback completed, schema matches pre-migration snapshot\", class: measured, evidence: \"pg_dump --schema-only diff: 0 lines\"}\n  - {text: \"Failure caused by a unique constraint on legacy rows\", class: inferred, evidence: \"error text mentions users_email_key; not reproduced in isolation\"}\nopen_questions: [\"Dedupe legacy rows first, or relax the constraint?\"]\ndefault_if_no_answer: \"do nothing\"",
+      "audience": "fixed (references/audience.md)",
+      "assertions": [
+        "First line contains the status word 실패",
+        "Every detail bullet carries exactly one of [확인]/[추정]/[가정] and the class matches the source (measured→확인, inferred→추정, assumed→가정)",
+        "Contains none of these translation-ese or AI-closing markers: 에 대해, 통해, 있어서, 되어진다, 결론적으로, 요약하면",
+        "The English source appears verbatim (unchanged) inside a <details> block or under a heading 'English technical report (verbatim)'",
+        "No sentence begins with meta-narration such as 이제 설명하자면 / 정리하면",
+        "States clearly that the database is back in its pre-migration state (rollback) as [확인]"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "prose-without-labels",
+      "prompt": "Report this to the owner in Korean. Note the source has no evidence labels:\n\nI looked into the flaky login test. It is probably a timing issue with the session cookie; the test passes when I add a 200ms sleep. I think the fix is to await the cookie write instead. I haven't changed anything yet.",
+      "audience": "fixed (references/audience.md)",
+      "assertions": [
+        "Claims that were not verified are labelled [가정] (or explicitly [추정] with the reasoning), and the report says the source had no labels",
+        "Status is stated as not done (e.g. 일부 완료 or 막힘), not 완료",
+        "Every detail bullet carries exactly one of [확인]/[추정]/[가정] and the class matches the source (measured→확인, inferred→추정, assumed→가정)",
+        "Contains none of these translation-ese or AI-closing markers: 에 대해, 통해, 있어서, 되어진다, 결론적으로, 요약하면",
+        "The English source appears verbatim (unchanged) inside a <details> block or under a heading 'English technical report (verbatim)'",
+        "No sentence begins with meta-narration such as 이제 설명하자면 / 정리하면"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "glossary-enforced",
+      "prompt": "Report this to the owner in Korean:\n\ntype: result\ntask_id: T-0440\nstatus: done\nsummary: Made the publish wrapper idempotent using msg_id dedupe; regression test added; consumer group ack path unchanged.\nclaims:\n  - {text: \"Duplicate publishes with same msg_id are dropped\", class: measured, evidence: \"tests/publish_test.py::test_idempotent\"}\n  - {text: \"Consumer group ack path unchanged\", class: measured, evidence: \"git diff lib/consumer.py: empty\"}",
+      "audience": "fixed (references/audience.md)",
+      "assertions": [
+        "Uses 멱등성(idempotency) on first use and 멱등성 afterwards, never 아이덤포턴시",
+        "Uses 컨슈머 그룹 (not 소비자 그룹) and 처리 확인(ack) (not 승인)",
+        "Uses 회귀 테스트 for regression test",
+        "Every detail bullet carries exactly one of [확인]/[추정]/[가정] and the class matches the source (measured→확인, inferred→추정, assumed→가정)",
+        "Contains none of these translation-ese or AI-closing markers: 에 대해, 통해, 있어서, 되어진다, 결론적으로, 요약하면",
+        "The English source appears verbatim (unchanged) inside a <details> block or under a heading 'English technical report (verbatim)'",
+        "No sentence begins with meta-narration such as 이제 설명하자면 / 정리하면"
+      ]
+    }
+  ]
+}

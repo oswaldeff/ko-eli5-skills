@@ -1,0 +1,19 @@
+{
+  "name": "ko-eli5-skills",
+  "owner": {
+    "name": "oswaldeff",
+    "url": "https://github.com/oswaldeff"
+  },
+  "metadata": {
+    "description": "ko-eli5: English agent reports to Korean owner reports. Derived from DreambigOu/ELI5 and DaleSeo/korean-skills.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "ko-eli5-skills",
+      "source": "./",
+      "description": "ko-eli5 + humanizer + grammar-checker + style-guide",
+      "version": "0.1.0"
+    }
+  ]
+}
