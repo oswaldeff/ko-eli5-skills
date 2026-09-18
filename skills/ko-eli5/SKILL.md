@@ -1,12 +1,13 @@
 ---
 name: ko-eli5
 description: Turn technical results into a Korean report the human owner can understand at a glance, then run the Korean QA pipeline (humanizer → grammar-checker → style-guide). Use for EVERY final reply addressed to the user in the terminal, whether reporting your own just-finished work, answering a question, or relaying another agent's English report. Also triggers on "보고해", "정리해서 알려줘", "쉽게 설명해", "사람용으로", "한국어로 보고", "ELI5". Do NOT use for messages to other agents or subagents, code, commit messages, PR text, or file contents.
-argument-hint: "[path-to-english-report | paste | (empty = report your own work)]"
 license: MIT
 metadata:
   author: oswaldeff
-  version: "0.2.0"
+  version: "0.3.0"
+  argument-hint: "[path-to-english-report | paste | (empty = report your own work)]"
   derived-from: "DreambigOu/ELI5 (structure, audience framing), DaleSeo/korean-skills (Korean QA pipeline)"
+  tools: "Claude Code (/ko-eli5), Codex CLI ($ko-eli5), Grok Build (/ko-eli5)"
 ---
 
 # KO-ELI5: English agent report → Korean owner report
@@ -40,7 +41,8 @@ simplify without losing anything.
 - **Intermediate progress line** during a long task: one Korean sentence, no template. The *final* reply of
   the turn always gets the full treatment.
 
-**Channel.** In a terminal, HTML does not render. Do not emit `<details>`. Use a plain separator instead:
+**Channel.** In a terminal (Claude Code, Codex CLI, Grok Build TUI alike), HTML does not render. Do not emit
+`<details>`. Use a plain separator instead:
 
 ```
 ---
@@ -130,8 +132,9 @@ Skip the appendix only for short answers (Step 0 size rule).
 ## Step 5: Korean QA pass (summary tier only)
 
 Run these three skills, in this exact order, on the Korean summary tier. Do not run them on the English
-appendix. If installed from this repository they are `humanizer`, `grammar-checker`, `style-guide`; if
-installed from the upstream plugin they are `korean-skills:humanizer` and so on.
+appendix. Skill names by host: Claude Code `humanizer` / `grammar-checker` / `style-guide` (or
+`korean-skills:<name>` when installed as the upstream plugin); Codex CLI `$humanizer` etc. from
+`~/.agents/skills`; Grok Build `/humanizer` etc. from `~/.agents/skills` or `~/.grok/skills`.
 
 If one of the three skills is not installed, do that pass manually using the pattern lists named below,
 and do not mention the missing skill in the reply.

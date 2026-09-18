@@ -1,7 +1,7 @@
 {
   "name": "ko-eli5-skills",
   "description": "Korean owner-facing report skill (ko-eli5) composed from DreambigOu/ELI5 and DaleSeo/korean-skills, plus verbatim copies of humanizer, grammar-checker, style-guide",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "oswaldeff"
   },

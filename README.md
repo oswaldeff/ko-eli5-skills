@@ -1,6 +1,6 @@
 # ko-eli5-skills
 
-에이전트가 쓴 영어 기술 보고를 한국어로, 한눈에 읽히는 형태로 바꿔주는 Claude Code 스킬 모음입니다.
+에이전트가 쓴 영어 기술 보고를 한국어로, 한눈에 읽히는 형태로 바꿔주는 에이전트 스킬 모음입니다. Claude Code, Codex CLI, Grok Build에서 동작합니다.
 
 > **원 저자 표시**
 >
@@ -40,9 +40,12 @@
 ## 구조
 
 ```
+install.sh                    # claude / codex / grok 설치 스크립트
+templates/ko-eli5-rules.md    # 전역 규칙 파일에 붙이는 블록
 skills/
 ├── ko-eli5/                  # 이 저장소에서 만든 스킬 (ELI5 기반)
 │   ├── SKILL.md
+│   ├── agents/openai.yaml    # Codex 표시 메타데이터
 │   ├── references/
 │   │   ├── audience.md       # 고정 청중. 바꾸려면 이 파일만 수정
 │   │   ├── analogies-ko.md   # 한국 맥락 비유 뱅크
@@ -57,23 +60,50 @@ skills/
 
 ## 설치
 
+Claude Code, Codex CLI, Grok Build 세 도구를 지원합니다. 스킬 파일은 같고, 놓는 위치와 규칙 파일만 다릅니다.
+
+| 도구 | 사용자 스킬 위치 | 전역 규칙 파일 | 호출 |
+|---|---|---|---|
+| Claude Code | `~/.claude/skills/` | `~/.claude/CLAUDE.md` | `/ko-eli5` |
+| Codex CLI | `~/.agents/skills/` | `~/.codex/AGENTS.md` | `$ko-eli5` |
+| Grok Build (xAI) | `~/.agents/skills/` 또는 `~/.grok/skills/` | `~/.grok/AGENTS.md` | `/ko-eli5` |
+
+### 스크립트로 (권장)
+
 ```bash
 git clone https://github.com/oswaldeff/ko-eli5-skills.git
-cp -r ko-eli5-skills/skills/* ~/.claude/skills/
+cd ko-eli5-skills
+bash install.sh                    # 세 도구 모두
+bash install.sh --agent codex      # 하나만: claude | codex | grok
+bash install.sh --dry-run          # 무엇을 할지만 출력
+bash install.sh --no-rules         # 스킬만 복사, 규칙 파일은 건드리지 않음
 ```
 
-`humanizer` / `grammar-checker` / `style-guide`를 이미 원본 플러그인(`korean-skills`)으로 설치했다면 `ko-eli5`만 복사해도 됩니다. `ko-eli5`는 그 세 스킬을 이름으로 부르기 때문에 어느 쪽이 설치돼 있어도 동작합니다.
+스크립트는 `skills/` 아래 네 스킬(ko-eli5 + humanizer + grammar-checker + style-guide)을 해당 위치에 복사하고, `templates/ko-eli5-rules.md`의 규칙 블록을 각 도구의 전역 규칙 파일 **맨 위에** 붙입니다. 규칙 파일에 이미 블록이 있으면 건너뛰므로 여러 번 실행해도 안전합니다. 기존 내용은 지우지 않습니다.
+
+### 수동으로
 
 ```bash
-cp -r ko-eli5-skills/skills/ko-eli5 ~/.claude/skills/
+# Claude Code
+cp -r skills/* ~/.claude/skills/
+# Codex CLI + Grok Build (둘 다 ~/.agents/skills 를 읽음)
+mkdir -p ~/.agents/skills && cp -r skills/* ~/.agents/skills/
 ```
 
-플러그인으로 설치할 수도 있습니다.
+그 뒤 `templates/ko-eli5-rules.md` 내용을 `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.grok/AGENTS.md` 맨 위에 붙이고 `__SKILL_PATH__`를 실제 경로로 바꿉니다.
+
+Claude Code 플러그인으로도 설치할 수 있습니다.
 
 ```bash
 claude /plugin marketplace add oswaldeff/ko-eli5-skills
 claude /plugin install ko-eli5-skills@ko-eli5-skills
 ```
+
+### 도구별 참고
+
+- **Codex CLI**: `~/.codex/AGENTS.md`는 전역 규칙으로 읽힙니다(`AGENTS.override.md`가 있으면 그것을 우선). 스킬은 `$ko-eli5`로 명시 호출하거나 description이 맞으면 자동 선택됩니다. `skills/ko-eli5/agents/openai.yaml`에 표시 이름과 `allow_implicit_invocation: true`가 들어 있습니다.
+- **Grok Build**: `~/.grok/` 안의 `AGENTS.md`(또는 `CLAUDE.md`)를 전역 규칙으로 읽고, `~/.agents/skills/`도 스캔합니다. `grok inspect`로 규칙 파일과 스킬이 잡히는지 확인할 수 있습니다. Grok은 Claude Code의 `~/.claude/` 설정도 함께 읽으므로 Claude Code용 설치만 해도 대부분 동작하지만, 규칙이 두 번 로드되지 않게 `~/.grok/AGENTS.md`에만 두는 쪽을 권합니다.
+- **frontmatter**: SKILL.md의 frontmatter는 Agent Skills 표준 필드(name, description, license, metadata)만 씁니다. Claude Code 전용 필드는 `metadata` 아래로 옮겨서 Codex와 Grok에서 경고 없이 로드됩니다.
 
 ## 사용
 
@@ -84,9 +114,9 @@ claude /plugin install ko-eli5-skills@ko-eli5-skills
 
 크기도 자동으로 맞춥니다. 단순 질문 답변은 라벨 붙인 1~3문장, 파일을 고치거나 명령을 돌린 작업 결과는 전체 템플릿. 터미널에서는 HTML이 안 보이므로 `<details>` 대신 `---` 구분선을 씁니다.
 
-### 터미널 답변에 항상 적용하기 (Claude Code)
+### 터미널 답변에 항상 적용하기
 
-`~/.claude/CLAUDE.md` 맨 위에 넣습니다. 스킬 description만으로는 매 답변마다 확실히 붙지 않으므로 CLAUDE.md 규칙이 필요합니다.
+각 도구의 전역 규칙 파일(`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.grok/AGENTS.md`) 맨 위에 넣습니다. `install.sh`가 이걸 대신 합니다. 스킬 description만으로는 매 답변마다 확실히 붙지 않으므로 규칙 파일이 필요합니다. 원문은 `templates/ko-eli5-rules.md`.
 
 ```markdown
 # 사용자 보고 형식: ko-eli5 (최우선순위, 답변 형식에 한정)

@@ -1,0 +1,6 @@
+# Optional Codex / ChatGPT metadata (https://developers.openai.com/codex/build-skills)
+interface:
+  display_name: "KO-ELI5 owner report"
+  short_description: "Turn technical results into a Korean owner-facing report with [확인]/[추정]/[가정] labels"
+policy:
+  allow_implicit_invocation: true
