@@ -77,18 +77,37 @@ claude /plugin install ko-eli5-skills@ko-eli5-skills
 
 ## 사용
 
-Claude Code에서:
+두 가지 모드가 있습니다 (SKILL.md Step 0).
 
-```
-/ko-eli5 <영어 보고 붙여넣기 또는 파일 경로>
-```
+- **Relay 모드**: 다른 에이전트의 영어 보고를 받아 한국어로 옮길 때. `/ko-eli5 <영어 보고 붙여넣기 또는 파일 경로>`
+- **Self-report 모드**: Claude Code가 자기 작업 결과나 답변을 터미널로 사용자에게 보고할 때. 인자 없이 자동 적용. 영어 원문이 없으니 부록은 `changes / ran / verified / not verified / decisions` 형태의 짧은 영어 기술 기록으로 대신합니다.
 
-또는 "보고해", "사람용으로 정리해줘", "한국어로 보고" 같은 말에 자동으로 붙습니다.
+크기도 자동으로 맞춥니다. 단순 질문 답변은 라벨 붙인 1~3문장, 파일을 고치거나 명령을 돌린 작업 결과는 전체 템플릿. 터미널에서는 HTML이 안 보이므로 `<details>` 대신 `---` 구분선을 씁니다.
 
-대장 에이전트가 사람에게 보고하기 직전에 항상 적용되게 하려면 `CLAUDE.md`에 한 줄 넣습니다.
+### 터미널 답변에 항상 적용하기 (Claude Code)
+
+`~/.claude/CLAUDE.md` 맨 위에 넣습니다. 스킬 description만으로는 매 답변마다 확실히 붙지 않으므로 CLAUDE.md 규칙이 필요합니다.
 
 ```markdown
-Before any report to the user, apply the `ko-eli5` skill. Messages to other agents stay in English.
+# 사용자 보고 형식: ko-eli5 (최우선순위, 답변 형식에 한정)
+
+사용자에게 터미널로 보내는 모든 최종 답변은 `ko-eli5` 스킬(`~/.claude/skills/ko-eli5/SKILL.md`)을 먼저 읽고 그 형식으로 쓴다.
+
+- 한국어. 작업 결과는 첫 줄에 상태어(완료 / 일부 완료 / 실패 / 막힘). 모든 주장에 [확인]/[추정]/[가정] 라벨. 선택이 남아 있으면 `결정 필요` 블록과 기본 동작.
+- 크기는 스킬 Step 0을 따른다. 단순 질문은 라벨 붙인 1~3문장, 템플릿 없이.
+- 적용 범위는 사용자에게 보내는 답변만. 서브에이전트·다른 에이전트에게 보내는 메시지는 영어 그대로. 코드, 커밋 메시지, PR 본문, 파일 내용에는 적용하지 않는다.
+- 코드 펜스 안의 내용은 번역하거나 고치지 않는다.
+```
+
+### korean-skills 설치 확인
+
+Step 5의 QA는 `humanizer` / `grammar-checker` / `style-guide`가 설치돼 있어야 실제로 돌아갑니다. 없으면 스킬이 패턴 목록으로 수동 검수하지만 품질이 떨어집니다. 이 저장소의 `skills/`를 전부 복사했거나, 원본 플러그인을 설치했으면 됩니다. 원본 플러그인을 `settings.json`으로 등록하는 방법:
+
+```json
+"enabledPlugins": { "korean-skills@korean-skills": true },
+"extraKnownMarketplaces": {
+  "korean-skills": { "source": { "source": "github", "repo": "DaleSeo/korean-skills" } }
+}
 ```
 
 보고 전담 서브에이전트를 두는 경우 `.claude/agents/reporter.md`:
@@ -149,6 +168,8 @@ python run-evals.py --a ../SKILL.md --b ~/experiments/SKILL-v2.md   # 두 버전
 ```
 
 테스트 6개: `result` 완료 / 일부 완료 / 실패, `blocker`, 라벨 없는 산문 입력(전부 `[가정]`으로 내려가는지), 용어집 준수.
+
+하네스는 ELI5 원본 그대로라 `claude -p`로만 생성·채점합니다. 다른 런타임(Agent SDK, 다른 모델)이나 채점자 분리는 아직 지원하지 않습니다. 또 `claude -p`가 `~/.claude/skills/`의 humanizer 3종을 찾지 못하면 Step 5가 빠진 채 채점되어 수치가 실제보다 좋게 나올 수 있으니, 평가 전에 세 스킬이 설치돼 있는지 확인하세요.
 
 ## 원본 대비 바꾼 파일 / 안 바꾼 파일
 

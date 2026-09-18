@@ -1,11 +1,11 @@
 ---
 name: ko-eli5
-description: Rewrite an English technical report (agent result, blocker, decision, or any engineering summary) into a Korean report the human owner can understand at a glance, then run the Korean QA pipeline (humanizer → grammar-checker → style-guide). Use this before every report to the human, and whenever the user says "보고해", "정리해서 알려줘", "쉽게 설명해", "사람용으로", "한국어로 보고", "ELI5", or asks what an agent result means.
-argument-hint: "[path-to-english-report | paste]"
+description: Turn technical results into a Korean report the human owner can understand at a glance, then run the Korean QA pipeline (humanizer → grammar-checker → style-guide). Use for EVERY final reply addressed to the user in the terminal, whether reporting your own just-finished work, answering a question, or relaying another agent's English report. Also triggers on "보고해", "정리해서 알려줘", "쉽게 설명해", "사람용으로", "한국어로 보고", "ELI5". Do NOT use for messages to other agents or subagents, code, commit messages, PR text, or file contents.
+argument-hint: "[path-to-english-report | paste | (empty = report your own work)]"
 license: MIT
 metadata:
   author: oswaldeff
-  version: "0.1.0"
+  version: "0.2.0"
   derived-from: "DreambigOu/ELI5 (structure, audience framing), DaleSeo/korean-skills (Korean QA pipeline)"
 ---
 
@@ -21,6 +21,39 @@ Design rule: **do not write English-simple first and then translate.** Reframe f
 Korean in one pass. A translation hop produces translation-ese, which is exactly what `humanizer` then has
 to remove. The full-fidelity English source is preserved verbatim as an appendix, so the Korean tier may
 simplify without losing anything.
+
+## Step 0: Decide mode, size, and channel
+
+**Mode.** Two inputs are possible:
+- **Relay mode**: the source is another agent's English report (`result`, `blocker`, `decision`, or prose).
+  Follow Steps 1-6 as written.
+- **Self-report mode**: you are reporting your own just-finished work, or answering the user's question.
+  There is no external source. In Step 2, reconstruct the five items from what you actually did: what you
+  ran and saw is `measured`; what you concluded from that is `inferred`; what you did not check is `assumed`.
+  `task_id` is optional; use the user's request condensed to a few words as the title.
+
+**Size.** Match the reply to what happened, not to the template:
+- **Short answer** (a factual question, nothing executed, no files touched): 1-3 Korean sentences. Label any
+  claim (`[확인]`/`[추정]`/`[가정]`) inline; skip the template, the analogy, and the appendix.
+- **Work result** (files changed, commands run, multi-step investigation, or a pending decision): full
+  template from Step 3 onward.
+- **Intermediate progress line** during a long task: one Korean sentence, no template. The *final* reply of
+  the turn always gets the full treatment.
+
+**Channel.** In a terminal, HTML does not render. Do not emit `<details>`. Use a plain separator instead:
+
+```
+---
+Technical appendix (EN)
+---
+```
+
+Everything inside code fences (paths, commands, code, test names, log excerpts) stays exactly as it is,
+in whatever language it was. The Korean rules apply to prose only.
+
+**Scope guard.** This skill shapes replies *to the user* only. It never applies to prompts or messages
+you write for subagents or other agents (those stay English), commit messages, PR descriptions, code
+comments, or file contents you are editing.
 
 ## Step 1: Load the fixed audience
 
@@ -72,28 +105,36 @@ Use the layout in `references/output-template.md`.
 
 ## Step 4: Attach the English appendix
 
-Paste the English source verbatim inside:
+**Relay mode:** paste the English source verbatim. Do not edit, trim, reorder, or reformat it. This
+appendix is the unit other agents and other sessions use for cross-checking; a paraphrased appendix
+defeats that purpose.
+
+**Self-report mode:** there is no external source, so write a compact English technical record instead,
+in this shape (omit empty lines):
 
 ```
-<details>
-<summary>English technical report (verbatim)</summary>
-
-...
-
-</details>
+changes: path:line-range, kind, one clause each
+ran: exact command -> outcome (pass/fail, counts)
+verified: what was actually checked, how
+not verified: what was not checked
+decisions: choices made and why, one line each
 ```
 
-Do not edit, trim, reorder, or reformat it. This appendix is the unit other agents and other sessions use
-for cross-checking; a paraphrased appendix defeats that purpose.
+Wrapper by channel:
+- Terminal (default): `---` / `Technical appendix (EN)` / `---` as in Step 0. No HTML.
+- Markdown that renders HTML (GitHub, web chat): `<details><summary>English technical report (verbatim)</summary> ... </details>`.
+- Slack: heading `### English technical report (verbatim)`.
 
-If the delivery channel cannot render `<details>` (for example Slack), replace the wrapper with a heading
-`### English technical report (verbatim)` and keep the body untouched.
+Skip the appendix only for short answers (Step 0 size rule).
 
 ## Step 5: Korean QA pass (summary tier only)
 
 Run these three skills, in this exact order, on the Korean summary tier. Do not run them on the English
 appendix. If installed from this repository they are `humanizer`, `grammar-checker`, `style-guide`; if
 installed from the upstream plugin they are `korean-skills:humanizer` and so on.
+
+If one of the three skills is not installed, do that pass manually using the pattern lists named below,
+and do not mention the missing skill in the reply.
 
 1. **`humanizer`**: remove Korean AI-writing patterns. Pay particular attention to the translation-ese
    category (에 대해 / 통해 / 있어서, 되어진다, 에 의해, 할 수 있다 overuse, ~것이다 overuse) and AI closing
@@ -114,7 +155,9 @@ removed or reworded a label, restore it. Labels are data, not style.
 
 ## Step 6: Final check before delivering
 
-- The status word is on the first line.
+- Size matches Step 0 (a one-line answer did not become a template; a work result did not become a paragraph).
+- The status word is on the first line (work results).
+- Nothing inside code fences was translated or reworded.
 - Every detail bullet has exactly one label, and the label matches the source class.
 - Glossary terms match `references/glossary.md`; English appears in parentheses only on first use.
 - The 결정 필요 block has options and a default action.
@@ -167,7 +210,8 @@ Streams 방식은 유실이 없고, 지금 쓰는 방식은 유실이 있을 가
 </details>
 ```
 
-More input/output pairs: `examples/01-result-done.md`, `examples/02-result-partial.md`, `examples/03-blocker.md`.
+More input/output pairs: `examples/01-result-done.md`, `examples/02-result-partial.md`, `examples/03-blocker.md`,
+and `examples/04-self-report-terminal.md` for self-report mode in a terminal (the default in Claude Code).
 
 ## Reminders (kept from ELI5, adapted)
 
